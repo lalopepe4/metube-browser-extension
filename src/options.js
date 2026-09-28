@@ -9,6 +9,7 @@ async function saveOptions() {
     let clickBehavior = document.querySelector('input[name="click-behavior"]:checked').value;
     let contextMenuClickBehavior = document.querySelector('input[name="context-menu-click-behavior"]:checked').value;
     let defaultFormat = document.getElementById('default_format').value
+    let defaultQuality = document.getElementById('default_quality').value
 
     let advancedElements = document.querySelectorAll('#advanced_settings input');
 
@@ -27,6 +28,7 @@ async function saveOptions() {
         "clickBehavior": clickBehavior,
         "contextMenuClickBehavior": contextMenuClickBehavior,
         "defaultFormat": defaultFormat,
+        "defaultQuality": defaultQuality,
         "advancedSettings": advancedSettings
     }, function () {
         document.getElementById("saved").classList.remove('hidden');
@@ -66,6 +68,7 @@ async function restoreOptions() {
         'clickBehavior',
         'contextMenuClickBehavior',
         'defaultFormat',
+        'defaultQuality',
         'advancedSettings'
     ], function (data) {
         if (data.metube !== undefined) {
@@ -86,6 +89,10 @@ async function restoreOptions() {
 
         if (data.defaultFormat !== undefined) {
             document.getElementById('default_format').value = data.defaultFormat;
+        }
+
+        if (data.defaultQuality !== undefined) {
+            document.getElementById('default_quality').value = data.defaultQuality;
         }
 
         if (data.advancedSettings !== undefined) {
