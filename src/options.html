@@ -46,19 +46,11 @@
       </select>
 
       <br><br>
+      <input type="checkbox" name="override_quality" id="override_quality"><label for="override_quality">Set default quality</label>
+      <br>
       <label for="default_quality">Quality:</label>
 
-      <select name="default_quality" id="default_quality">
-        <option value="best">Best</option>
-        <option value="2160p">2160p</option>
-        <option value="1440p">1440p</option>
-        <option value="1080p">1080p</option>
-        <option value="720p">720p</option>
-        <option value="480p">480p</option>
-        <option value="360p">360p</option>
-        <option value="240p">240p</option>
-        <option value="worst">Worst</option>
-      </select>
+      <select name="default_quality" id="default_quality"></select>
 
       <h4>When you left-click on the extension icon, you'd like it to:</h4>
       <input type="radio" name="click-behavior" id="go-to-metube" value="go-to-metube" checked><label for="go-to-metube">Go to MeTube URL</label><br>
@@ -85,5 +77,6 @@ https://video.disney.com/*"></textarea></p>
       <p>&nbsp;</p>
     </form>
   </body>
+  <script src="constants.js"></script>
   <script src="options.js"></script>
 </html>

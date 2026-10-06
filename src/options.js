@@ -10,6 +10,7 @@ async function saveOptions() {
     let contextMenuClickBehavior = document.querySelector('input[name="context-menu-click-behavior"]:checked').value;
     let defaultFormat = document.getElementById('default_format').value
     let defaultQuality = document.getElementById('default_quality').value
+    let overrideQuality = document.getElementById('override_quality').checked
 
     let advancedElements = document.querySelectorAll('#advanced_settings input');
 
@@ -29,6 +30,7 @@ async function saveOptions() {
         "contextMenuClickBehavior": contextMenuClickBehavior,
         "defaultFormat": defaultFormat,
         "defaultQuality": defaultQuality,
+        "overrideQuality": overrideQuality,
         "advancedSettings": advancedSettings
     }, function () {
         document.getElementById("saved").classList.remove('hidden');
@@ -61,6 +63,28 @@ async function saveOptions() {
 
 }
 
+function populateQualityOptions(format, selectedQuality) {
+    const select = document.getElementById('default_quality');
+    const options = getQualityOptions(format);
+
+    select.innerHTML = '';
+    options.forEach(({id, text}) => {
+        const option = document.createElement('option');
+        option.value = id;
+        option.textContent = text;
+        select.appendChild(option);
+    });
+
+    // Keep the previous selection when it is still valid for the new format,
+    // otherwise fall back to the first option (best).
+    select.value = isValidQuality(format, selectedQuality) ? selectedQuality : options[0].id;
+}
+
+function updateQualityEnabled() {
+    const enabled = document.getElementById('override_quality').checked;
+    document.getElementById('default_quality').disabled = !enabled;
+}
+
 async function restoreOptions() {
     chrome.storage.sync.get([
         'metube',
@@ -69,6 +93,7 @@ async function restoreOptions() {
         'contextMenuClickBehavior',
         'defaultFormat',
         'defaultQuality',
+        'overrideQuality',
         'advancedSettings'
     ], function (data) {
         if (data.metube !== undefined) {
@@ -91,9 +116,15 @@ async function restoreOptions() {
             document.getElementById('default_format').value = data.defaultFormat;
         }
 
-        if (data.defaultQuality !== undefined) {
-            document.getElementById('default_quality').value = data.defaultQuality;
+        populateQualityOptions(
+            document.getElementById('default_format').value,
+            data.defaultQuality
+        );
+
+        if (data.overrideQuality !== undefined) {
+            document.getElementById('override_quality').checked = data.overrideQuality;
         }
+        updateQualityEnabled();
 
         if (data.advancedSettings !== undefined) {
           Object.keys(data.advancedSettings).forEach((key) => {
@@ -106,6 +137,12 @@ async function restoreOptions() {
 function splitLines(t) { return t.split(/\r\n|\r|\n/).filter(s => s.trim() !== ''); }
 
 window.addEventListener("DOMContentLoaded", restoreOptions, { passive: true });
+
+document.getElementById('default_format').addEventListener('change', (e) => {
+    populateQualityOptions(e.target.value, document.getElementById('default_quality').value);
+});
+
+document.getElementById('override_quality').addEventListener('change', updateQualityEnabled);
 
 document.querySelector("form").addEventListener("submit", (e) => {
     e.preventDefault();

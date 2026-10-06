@@ -1,4 +1,6 @@
 // 'use strict';
+importScripts('constants.js');
+
 chrome.runtime.onInstalled.addListener(function () {
     // https://stackoverflow.com/questions/19377262/regex-for-youtube-url
     chrome.contextMenus.create({
@@ -13,7 +15,17 @@ chrome.runtime.onInstalled.addListener(function () {
     });
 });
 
-function sendVideoUrlToMetube(videoUrl, metubeUrl, format, quality, advancedSettings, callback) {
+function resolveQuality(format, quality, overrideQuality) {
+    // Without the override, behave as before and let MeTube pick (best).
+    if (!overrideQuality) {
+        return 'best';
+    }
+    // A stale value from settings (the list changes over time) must not be
+    // forwarded as-is: it would leave the select empty and send quality: "".
+    return isValidQuality(format, quality) ? quality : 'best';
+}
+
+function sendVideoUrlToMetube(videoUrl, metubeUrl, format, quality, overrideQuality, advancedSettings, callback) {
     console.log("Sending videoUrl=" + videoUrl + " to metubeUrl=" + metubeUrl);
 
     if (typeof callback !== 'function') {
@@ -24,7 +36,7 @@ function sendVideoUrlToMetube(videoUrl, metubeUrl, format, quality, advancedSett
     let {hostname} = new URL(videoUrl)
 
     let postData = {
-      "quality": quality || "best",
+      "quality": resolveQuality(format, quality, overrideQuality),
       "format": format,
       "url": videoUrl,
       'auto_start': !advancedSettings['disable_auto_start'] ?? true
@@ -56,7 +68,7 @@ function sendVideoUrlToMetube(videoUrl, metubeUrl, format, quality, advancedSett
 }
 
 chrome.contextMenus.onClicked.addListener(function (item, tab) {
-    chrome.storage.sync.get(['metube', 'contextMenuClickBehavior', 'defaultFormat', 'defaultQuality', 'advancedSettings'], function (data) {
+    chrome.storage.sync.get(['metube', 'contextMenuClickBehavior', 'defaultFormat', 'defaultQuality', 'overrideQuality', 'advancedSettings'], function (data) {
         if (data === undefined || !data.hasOwnProperty('metube') || data.metube === "") {
             openTab(chrome.runtime.getURL('options.html'), tab);
             return
@@ -64,7 +76,7 @@ chrome.contextMenus.onClicked.addListener(function (item, tab) {
 
         let needToSwitch = (data.contextMenuClickBehavior === 'context-menu-send-current-url-and-switch');
 
-        sendVideoUrlToMetube(item.linkUrl, data.metube, data.defaultFormat, data.defaultQuality, data.advancedSettings, function () {
+        sendVideoUrlToMetube(item.linkUrl, data.metube, data.defaultFormat, data.defaultQuality, data.overrideQuality, data.advancedSettings, function () {
             if (needToSwitch) {
                 openTab(data.metube, tab);
             }
@@ -73,7 +85,7 @@ chrome.contextMenus.onClicked.addListener(function (item, tab) {
 });
 
 chrome.action.onClicked.addListener(function (tab) {
-    chrome.storage.sync.get(['metube', 'clickBehavior', 'defaultFormat', 'defaultQuality', 'advancedSettings'], function (data) {
+    chrome.storage.sync.get(['metube', 'clickBehavior', 'defaultFormat', 'defaultQuality', 'overrideQuality', 'advancedSettings'], function (data) {
         if (data === undefined || !data.hasOwnProperty('metube') || data.metube === "") {
             openTab(chrome.runtime.getURL('options.html'), tab);
             return
@@ -92,7 +104,7 @@ chrome.action.onClicked.addListener(function (tab) {
         }, function (tabs) {
             // use this tab to get the youtube video URL
             let videoUrl = tabs[0].url;
-            sendVideoUrlToMetube(videoUrl, data.metube, data.defaultFormat, data.defaultQuality, data.advancedSettings, function () {
+            sendVideoUrlToMetube(videoUrl, data.metube, data.defaultFormat, data.defaultQuality, data.overrideQuality, data.advancedSettings, function () {
                 if (needToSwitch) {
                     openTab(data.metube, tab);
                 }
